@@ -28,10 +28,45 @@ class Student(BaseModel):
     @field_validator("category")
     @classmethod
     def validate_category(cls, v):
-        valid = ["General", "OBC", "SC", "ST", "EWS"]
+        if not v:
+            raise ValueError("Category cannot be empty")
+        
+        v = v.strip().upper()
+        valid = ["GENERAL", "OBC", "SC", "ST", "EWS"]
+        
+        # Map some common variations
+        mapping = {
+            "OPEN": "GENERAL",
+            "UNRESERVED": "GENERAL",
+            "OTHER BACKWARD CLASS": "OBC",
+            "SCHEDULED CASTE": "SC",
+            "SCHEDULED TRIBE": "ST",
+            "ECONOMICALLY WEAKER SECTION": "EWS"
+        }
+        
+        if v in mapping:
+            v = mapping[v]
+            
         if v not in valid:
-            raise ValueError(f"Category must be one of: {', '.join(valid)}")
+            # Try title case if upper didn't match (for General)
+            v_title = v.capitalize()
+            if v_title in ["General", "OBC", "SC", "ST", "EWS"]:
+                return v_title
+            
+            # Final check against the backend expected format (Title Case)
+            final_valid = ["General", "OBC", "SC", "ST", "EWS"]
+            for opt in final_valid:
+                if v == opt.upper():
+                    return opt
+                    
+            raise ValueError(f"Category must be one of: {', '.join(final_valid)}")
+        
+        # Convert back to Title Case for internal consistency
+        for opt in ["General", "OBC", "SC", "ST", "EWS"]:
+            if v == opt.upper():
+                return opt
         return v
+
 
     @field_validator("state", "course")
     @classmethod

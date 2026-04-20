@@ -6,8 +6,10 @@ from app.api.predict import router
 from app.core.error_handlers import (
     ScholarshipAPIError,
     scholarship_api_error_handler,
+    validation_exception_handler,
     general_exception_handler
 )
+from fastapi.exceptions import RequestValidationError
 from app.core.config import APP_NAME, APP_VERSION
 from app.core.logger import get_logger
 from datetime import datetime
@@ -35,7 +37,9 @@ app.add_middleware(
 
 # ✅ Global Error Handlers
 app.add_exception_handler(ScholarshipAPIError, scholarship_api_error_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
+
 
 # ✅ Router
 app.include_router(router)

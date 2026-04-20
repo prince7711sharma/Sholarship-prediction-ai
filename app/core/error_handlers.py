@@ -1,4 +1,5 @@
-from fastapi import Request
+from fastapi import Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.core.logger import get_logger
 
@@ -55,6 +56,26 @@ async def scholarship_api_error_handler(request: Request, exc: ScholarshipAPIErr
     return build_error_response(exc.status_code, exc.message, exc.details)
 
 
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle FastAPI validation errors (422)."""
+    errors = exc.errors()
+    error_details = []
+    
+    for err in errors:
+        loc = " -> ".join([str(l) for l in err.get("loc", [])])
+        msg = err.get("msg", "Unknown error")
+        typ = err.get("type", "Unknown type")
+        error_details.append(f"Field: {loc} | Error: {msg} ({typ})")
+        
+    logger.error(f"❌ Validation Failed: {'; '.join(error_details)}")
+    
+    return build_error_response(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        message="Invalid request data. Please check your inputs.",
+        details=error_details[0] if error_details else "Check all fields are correctly filled."
+    )
+
+
 async def general_exception_handler(request: Request, exc: Exception):
     """Catch-all handler for unhandled exceptions."""
     logger.critical(f"Unhandled exception: {type(exc).__name__}: {str(exc)}")
@@ -63,3 +84,4 @@ async def general_exception_handler(request: Request, exc: Exception):
         "An unexpected error occurred. Please try again later.",
         str(exc) if str(exc) else None
     )
+
