@@ -5,6 +5,7 @@ from app.services.llm_service import get_llm_response
 from app.services.search_service import search_scholarships
 from app.core.logger import get_logger
 from app.core.rate_limiter import check_rate_limit
+from app.services.cache_service import scholarship_cache
 import json
 import re
 from datetime import datetime
@@ -117,6 +118,23 @@ def predict(data: Student):
             }
         }
 
+    # ─── New: Check Cache ────────────────────────────────
+    cached_result = scholarship_cache.get(data)
+    if cached_result:
+        return {
+            "status": "success",
+            "timestamp": request_time,
+            "student": {
+                "marks": data.marks,
+                "category": data.category,
+                "income": data.income,
+                "state": data.state,
+                "course": data.course
+            },
+            "data": cached_result,
+            "note": "Result served from high-speed cache"
+        }
+
     try:
         # Step 1: Search for real scholarship data
         logger.info("Step 1/3: Searching web for scholarships...")
@@ -136,6 +154,7 @@ def predict(data: Student):
         logger.info("Step 3/3: Getting AI recommendations...")
         result = get_llm_response(prompt, system_message)
         parsed = extract_json(result) if result else None
+
 
         # Validate the parsed response
         if parsed:
@@ -164,6 +183,9 @@ def predict(data: Student):
                     s.setdefault("match_score", 60)
 
                 logger.info(f"Successfully parsed {len(parsed['scholarships'])} scholarships from LLM")
+                
+                # Store in cache
+                scholarship_cache.set(data, parsed)
 
         # Fallback if LLM failed
         if not parsed:
@@ -185,6 +207,7 @@ def predict(data: Student):
 
         logger.info(f"✅ Response sent: {parsed['recommendation']} recommendation, {parsed['probability']}% probability, {len(parsed['scholarships'])} scholarships")
         return response
+
 
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")

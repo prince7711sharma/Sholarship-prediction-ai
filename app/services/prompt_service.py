@@ -1,66 +1,47 @@
 def build_system_message() -> str:
     """Build the system message for the LLM to control response behavior."""
-    return """You are an Indian scholarship advisor AI. Respond ONLY in valid JSON. Provide accurate, actionable scholarship recommendations. Focus on scholarships the student is most likely to qualify for. Be concise."""
+    return "You are an Indian scholarship advisor AI. Respond ONLY in valid JSON. Provide accurate, actionable recommendations. Be concise."
 
 
 def build_prompt(data, search_results: str = "") -> str:
-    """Build a rich, multi-section prompt combining student data and search results."""
+    """Build an optimized prompt combining student data and search results."""
 
     income_bracket = data.income_bracket
     gender_info = f"\nGender: {data.gender}" if data.gender else ""
-    disability_info = f"\nPerson with Disability: Yes" if data.disability else ""
+    disability_info = f"\ndisability: Yes" if data.disability else ""
 
     search_section = ""
     if search_results:
-        search_section = f"""
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📡 REAL-TIME SCHOLARSHIP DATA FROM WEB SEARCH:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{search_results}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Use the above search results to provide REAL, ACCURATE scholarship information.
-Prioritize scholarships found in the search results but also add your own knowledge.
-"""
+        search_section = f"\nREAL-TIME DATA:\n{search_results}\nUse this search data to provide real scholarships. Prioritize them."
 
-    return f"""
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎓 STUDENT PROFILE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Marks/Percentage: {data.marks}%
-🏷️ Category: {data.category}
-💰 Family Annual Income: ₹{data.income:,} ({income_bracket})
-📍 State: {data.state}
-📚 Course: {data.course}{gender_info}{disability_info}
+    return f"""STUDENT PROFILE:
+- Marks: {data.marks}%
+- Category: {data.category}
+- Income: ₹{data.income:,} ({income_bracket})
+- State: {data.state}
+- Course: {data.course}{gender_info}{disability_info}
 
 {search_section}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 YOUR TASK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TASK: Provide 4 personalized scholarship recommendations.
+Include: probability (0-100), recommendation (High/Medium/Low), and a brief summary.
 
-Provide EXACTLY 4 personalized scholarship recommendations with: name, provider, eligibility, amount, deadline, how to apply, website, why they qualify, and match_score.
-
-Also provide: probability (0-100), recommendation (High/Medium/Low), and a 1-2 sentence summary.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📄 REQUIRED JSON FORMAT (respond ONLY with this JSON, nothing else):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+JSON FORMAT:
 {{
-  "probability": <number 0-100>,
-  "recommendation": "<High|Medium|Low>",
-  "summary": "<Personalized 2-3 sentence summary for the student>",
+  "probability": 85,
+  "recommendation": "High",
+  "summary": "Short summary here...",
   "scholarships": [
     {{
-      "title": "<Full Scholarship Name>",
-      "provider": "<Government body or organization name>",
-      "eligibility": "<Detailed eligibility criteria>",
-      "benefit_amount": "<₹ Amount or range>",
-      "deadline": "<Application deadline or timeline>",
-      "how_to_apply": "<Step-by-step application process>",
-      "website": "<Official URL>",
-      "why_you_qualify": "<Specific reason why THIS student qualifies>",
-      "match_score": <number 0-100>
+      "title": "Name",
+      "provider": "Body",
+      "eligibility": "Criteria",
+      "benefit_amount": "Amount",
+      "deadline": "Date",
+      "how_to_apply": "Steps",
+      "website": "URL",
+      "why_you_qualify": "Reason",
+      "match_score": 90
     }}
   ]
 }}

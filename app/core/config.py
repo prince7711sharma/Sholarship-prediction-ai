@@ -14,7 +14,8 @@ LLM_MAX_RETRIES = 2
 LLM_TEMPERATURE = 0.7
 
 # ─── Search Config ───────────────────────────────────────────────────
-SEARCH_MAX_RESULTS = 3
+SEARCH_MAX_RESULTS = 2
+
 
 # ─── App Config ──────────────────────────────────────────────────────
 APP_NAME = "Scholarship Predictor AI"
